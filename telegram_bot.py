@@ -303,3 +303,49 @@ class ChatGPT3TelegramBot:
         application.add_error_handler(self.error_handler)
 
         application.run_polling()
+import requests
+import datetime
+import time
+
+TOKEN = "<YOUR BOT TOKEN>" # replace with your bot token
+URL = "https://api.telegram.org/bot{}/".format(TOKEN)
+
+def get_url(url):
+    response = requests.get(url)
+    content = response.content.decode("utf8")
+    return content
+
+def get_json_from_url(url):
+    content = get_url(url)
+    js = json.loads(content)
+    return js
+
+def get_updates(offset=None):
+    url = URL + "getUpdates?timeout=100"
+    if offset:
+        url += "&offset={}".format(offset)
+    js = get_json_from_url(url)
+    return js
+
+def send_message(text, chat_id):
+    url = URL + "sendMessage?text={}&chat_id={}".format(text, chat_id)
+    get_url(url)
+
+def main():
+    last_update_id = None
+    while True:
+        print("getting updates")
+        updates = get_updates(last_update_id)
+        if len(updates["result"]) > 0:
+            last_update_id = updates["result"][-1]["update_id"] + 1
+            for update in updates["result"]:
+                try:
+                    text = update["message"]["text"]
+                    chat_id = update["message"]["chat"]["id"]
+                    send_message(text, chat_id)
+                except Exception as e:
+                    print(e)
+        time.sleep(0.5)
+
+if __name__ == '__main__':
+    main()
